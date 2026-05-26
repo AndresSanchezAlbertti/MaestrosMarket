@@ -1,0 +1,117 @@
+// Prisma schema for DocenMarket
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  MEMBER
+  ADMIN
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ListingType {
+  PRODUCT
+  SERVICE
+  TRUEQUE
+  EMPRENDIMIENTO
+  BOLSA
+}
+
+enum ListingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum Visibility {
+  UNION_ONLY
+  NETWORK
+}
+
+model Union {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  province  String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  members User[]
+}
+
+model User {
+  id                 String             @id @default(cuid())
+  email              String             @unique
+  passwordHash       String
+  fullName           String
+  phone              String?
+  province           String?
+  affiliateNumber    String?
+  role               Role               @default(MEMBER)
+  verificationStatus VerificationStatus @default(PENDING)
+  rejectionReason    String?
+  canView            Boolean            @default(true)
+  canPublish         Boolean            @default(true)
+  canModerate        Boolean            @default(false)
+  canManageUsers     Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  unionId  String?
+  union    Union?    @relation(fields: [unionId], references: [id])
+
+  listings        Listing[]
+  sentMessages    Message[] @relation("MessageFrom")
+  receivedMessages Message[] @relation("MessageTo")
+}
+
+model Listing {
+  id              String        @id @default(cuid())
+  title           String
+  description     String
+  type            ListingType
+  price           Decimal?      @db.Decimal(12, 2)
+  currency        String        @default("ARS")
+  location        String?
+  imageUrl        String?
+  status          ListingStatus @default(PENDING)
+  visibility      Visibility    @default(NETWORK)
+  rejectionReason String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  messages Message[]
+
+  @@index([type, status])
+  @@index([authorId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  body      String
+  createdAt DateTime @default(now())
+
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id])
+
+  fromId String
+  from   User   @relation("MessageFrom", fields: [fromId], references: [id])
+
+  toId String
+  to   User   @relation("MessageTo", fields: [toId], references: [id])
+
+  @@index([listingId, createdAt])
+}

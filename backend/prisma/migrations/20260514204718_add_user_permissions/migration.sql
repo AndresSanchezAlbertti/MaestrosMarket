@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "canManageUsers" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "canModerate" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "canPublish" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN     "canView" BOOLEAN NOT NULL DEFAULT true;
